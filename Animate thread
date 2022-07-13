@@ -1,0 +1,90 @@
+import java.util.Random;
+
+import javafx.animation.PathTransition;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+public class AnimateThread extends Application{
+	//animate color, rotation and scale :)
+	public static final int SIZE = 500;
+	private Random rand;
+	private Pane pane;
+	private double rotate;
+	@Override
+	public void start(Stage primaryStage) {
+		rand = new Random();
+		pane = new Pane();
+		pane.setPrefSize(SIZE, SIZE);
+		pane.setOnMouseClicked(e -> {animateShape(e.getX(), e.getY());});
+		PathTransition path = new PathTransition();
+		Circle c = new Circle();
+		
+		path.setNode(c);
+		path.setPath(c);
+		Scene scene = new Scene(pane);
+		primaryStage.setTitle("Pane Demo");
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
+	public static void main(String[] args) {
+		launch(args);
+	}
+	public void animateShape(double x, double y) {
+		ThreadBouncer b = new ThreadBouncer(x, y);
+		pane.getChildren().add(b);
+		new Thread(b).start();
+	}
+	public void updateBouncer(ThreadBouncer b) {
+		b.setRotate(rotate);
+	}
+	public void removeBouncer(ThreadBouncer b) {
+		pane.getChildren().remove(b);
+	}
+	class ThreadBouncer extends Group implements Runnable{
+		public static final long SLEEP_TIME = 100;
+		private Rectangle rect;
+		private long time;
+		public ThreadBouncer(double x, double y) {
+			rect = new Rectangle(10, 10, 20, 20);
+			this.getChildren().add(rect);
+			this.setTranslateX(x);
+			this.setTranslateY(y);
+			time = 50000;
+		}
+		public void run() {
+			long end = System.currentTimeMillis() + time;
+			while(System.currentTimeMillis() < end) {
+				//changes the rotation and the color
+				int randomScaleX = rand.nextInt(5);
+				int randomScaleY = rand.nextInt(5);
+				int r = rand.nextInt(255);
+	            int g = rand.nextInt(255);
+	            int b = rand.nextInt(255);
+				rect.setFill(Color.rgb(r, g, b));
+				rect.setScaleX(randomScaleX);
+				rect.setScaleY(randomScaleY);
+				rotate = rotate + 20;   
+				if(rotate == 360)
+					rotate = 0;
+				Platform.runLater(new Runnable() {
+					public void run() {
+						updateBouncer(ThreadBouncer.this);
+					}
+				});				
+				try {
+					Thread.sleep(SLEEP_TIME);
+				}
+				catch(InterruptedException ie) {
+					ie.printStackTrace();
+				}
+
+			} 
+		}
+	}
+}
